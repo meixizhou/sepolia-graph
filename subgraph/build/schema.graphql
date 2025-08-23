@@ -1,0 +1,9 @@
+
+type Record @entity {
+  id: ID!
+  sender: Bytes!
+  content: String!
+  txHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}

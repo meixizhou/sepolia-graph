@@ -1,0 +1,14 @@
+{
+  "name": "datavault-subgraph",
+  "version": "1.0.0",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "auth": "graph auth --product hosted-service 7d95c806f0c7207959bf1d931fca88b8",
+    "deploy": "graph deploy --product hosted-service 0x683c85e5743002d00dE8802074173B9fd2dEAd54/datavault-sepolia"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.70.0",
+    "@graphprotocol/graph-ts": "^0.34.0"
+  }
+}
