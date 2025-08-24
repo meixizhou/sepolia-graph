@@ -1,9 +1,16 @@
-
 type Record @entity {
+  id: ID!             # subgraph 实体唯一 ID (你自己生成的 txHash:logIndex)
+  sender: Bytes!      # event.params.sender
+  dataId: BigInt!     # event.params.id
+  content: String!    # event.params.content
+  timestamp: BigInt!  # event.params.timestamp
+  txHash: Bytes!      # 交易哈希
+  blockNumber: BigInt!
+}
+type Transfer @entity {
   id: ID!
   sender: Bytes!
-  content: String!
-  txHash: Bytes!
-  blockNumber: BigInt!
+  to: Bytes!
+  amount: BigInt!
   timestamp: BigInt!
 }

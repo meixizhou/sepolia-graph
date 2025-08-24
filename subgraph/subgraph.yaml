@@ -8,9 +8,9 @@ dataSources:
     name: DataVault
     network: sepolia
     source:
-      address: "0x7cF9801deC30B2a0B12FF37A3005dBF8536072E6"  # 部署成功后替换
+      address: "0xEaB8bC47f502dbEfeC3EfD10Be0c3EEd73F99765"  # 部署成功后替换
       abi: DataVault
-      startBlock: 0
+      startBlock: 9045891
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -21,6 +21,9 @@ dataSources:
         - name: DataVault
           file: ./abis/DataVault.json
       eventHandlers:
-        - event: DataWritten(indexed address,indexed uint256,string,uint256)
-          handler: handleDataWritten
+      - event: DataWritten(indexed address,indexed uint256,string,uint256)
+        handler: handleDataWritten
+      - event: EthTransferred(indexed address,indexed address,uint256,uint256)
+        handler: handleEthTransferred
+
       file: ./src/mapping.ts

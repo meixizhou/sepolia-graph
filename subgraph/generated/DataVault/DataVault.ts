@@ -40,6 +40,36 @@ export class DataWritten__Params {
   }
 }
 
+export class EthTransferred extends ethereum.Event {
+  get params(): EthTransferred__Params {
+    return new EthTransferred__Params(this);
+  }
+}
+
+export class EthTransferred__Params {
+  _event: EthTransferred;
+
+  constructor(event: EthTransferred) {
+    this._event = event;
+  }
+
+  get sender(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get to(): Address {
+    return this._event.parameters[1].value.toAddress();
+  }
+
+  get amount(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get timestamp(): BigInt {
+    return this._event.parameters[3].value.toBigInt();
+  }
+}
+
 export class DataVault extends ethereum.SmartContract {
   static bind(address: Address): DataVault {
     return new DataVault("DataVault", address);
@@ -58,6 +88,36 @@ export class DataVault extends ethereum.SmartContract {
     }
     let value = result.value;
     return ethereum.CallResult.fromValue(value[0].toBigInt());
+  }
+}
+
+export class TransferEthCall extends ethereum.Call {
+  get inputs(): TransferEthCall__Inputs {
+    return new TransferEthCall__Inputs(this);
+  }
+
+  get outputs(): TransferEthCall__Outputs {
+    return new TransferEthCall__Outputs(this);
+  }
+}
+
+export class TransferEthCall__Inputs {
+  _call: TransferEthCall;
+
+  constructor(call: TransferEthCall) {
+    this._call = call;
+  }
+
+  get to(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+}
+
+export class TransferEthCall__Outputs {
+  _call: TransferEthCall;
+
+  constructor(call: TransferEthCall) {
+    this._call = call;
   }
 }
 
