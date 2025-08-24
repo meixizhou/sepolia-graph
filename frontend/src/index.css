@@ -1,0 +1,13 @@
+/* CSS 变量定义（shadcn UI 需要） */
+:root {
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 5.9% 90%;
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+}
+
+/* Tailwind 指令 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

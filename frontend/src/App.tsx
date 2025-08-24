@@ -1,30 +1,28 @@
-
 import React, { useEffect, useMemo, useState } from "react";
-import { ethers, ZeroAddress, parseEther } from "ethers";
+import { ethers, parseEther } from "ethers";
 import { ApolloClient, InMemoryCache, ApolloProvider, gql, useQuery } from "@apollo/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 // ======== 环境变量 ========
-const SUBGRAPH_URL = import.meta.env.VITE_SUBGRAPH_URL as string; // 例如：https://api.thegraph.com/subgraphs/name/<user>/datavault-sepolia
+const SUBGRAPH_URL = import.meta.env.VITE_SUBGRAPH_URL as string;
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as string;
 const CONTRACT_ABI = [
   {
-    "inputs": [
-      { "internalType": "string", "name": "content", "type": "string" }
-    ],
-    "name": "writeData",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    inputs: [{ internalType: "string", name: "content", type: "string" }],
+    name: "writeData",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
   },
   {
-    "inputs": [
-      { "internalType": "address payable", "name": "to", "type": "address" }
-    ],
-    "name": "transferEth",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  }
+    inputs: [{ internalType: "address payable", name: "to", type: "address" }],
+    name: "transferEth",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
 ];
 
 // ======== GraphQL 查询 ========
@@ -44,30 +42,7 @@ const GET_DATA = gql`
       timestamp
     }
   }
-  
 `;
-
-function RecordsList() {
-  const { data, loading, error, refetch } = useQuery(GET_RECORDS, { fetchPolicy: "network-only" });
-  console.log(data, 'data=========')
-  useEffect(() => {
-    const t = setInterval(() => refetch(), 50000);
-    return () => clearInterval(t);
-  }, [refetch]);
-
-  if (loading) return <p>加载中…</p>;
-  if (error) return <p>子图查询出错：{String(error)}</p>;
-
-  return (
-    <ul>
-      {data.records.map((r: any) => (
-        <li key={r.id}>
-          <code>{r.sender}</code> ： {r.content} （{new Date(Number(r.timestamp) * 1000).toLocaleString()}）
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 function DataList() {
   const { data, loading, error, refetch } = useQuery(GET_DATA, { fetchPolicy: "network-only" });
@@ -77,40 +52,59 @@ function DataList() {
     return () => clearInterval(t);
   }, [refetch]);
 
-  if (loading) return <p>加载中…</p>;
-  if (error) return <p>子图查询出错：{String(error)}</p>;
+  if (loading) return <p className="text-gray-500">⏳ 正在加载数据…</p>;
+  if (error) return <p className="text-red-500">❌ 子图查询出错：{String(error)}</p>;
 
   return (
-    <div>
-      <h3>📌 写入数据记录</h3>
-      <ul>
-        {data.records.map((r: any) => (
-          <li key={r.id}>
-            <code>{r.sender}</code> 写入 → {r.content}  
-            <small>（{new Date(Number(r.timestamp) * 1000).toLocaleString()}）</small>
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>📌 写入数据记录</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {data.records.map((r: any) => (
+            <div key={r.id} className="p-3 border rounded-lg bg-gray-50">
+              <p>
+                <span className="font-mono text-sm">{r.sender}</span> 写入 →{" "}
+                <span className="font-semibold">{r.content}</span>
+              </p>
+              <small className="text-gray-500">
+                {new Date(Number(r.timestamp) * 1000).toLocaleString()}
+              </small>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
-      <h3>💸 转账记录</h3>
-      <ul>
-        {data.transfers.map((t: any) => (
-          <li key={t.id}>
-            <code>{t.sender}</code> 转给 <code>{t.to}</code> → {ethers.formatEther(t.amount)} ETH  
-            <small>（{new Date(Number(t.timestamp) * 1000).toLocaleString()}）</small>
-          </li>
-        ))}
-      </ul>
+      <Card>
+        <CardHeader>
+          <CardTitle>💸 转账记录</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {data.transfers.map((t: any) => (
+            <div key={t.id} className="p-3 border rounded-lg bg-gray-50">
+              <p>
+                <span className="font-mono text-sm">{t.sender}</span> →{" "}
+                <span className="font-mono text-sm">{t.to}</span>  
+                <span className="ml-2 font-semibold">{ethers.formatEther(t.amount)} ETH</span>
+              </p>
+              <small className="text-gray-500">
+                {new Date(Number(t.timestamp) * 1000).toLocaleString()}
+              </small>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
 
 function AppInner() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [account, setAccount] = useState<string>("");
-  const [amount, setAmount] = useState<string>("0.00005");
+  const [amount, setAmount] = useState<string>("");
+  const [toAddress, setToAddress] = useState<string>(""); // 新增输入地址状态
   const [content, setContent] = useState<string>("");
 
   const apollo = useMemo(() => new ApolloClient({ uri: SUBGRAPH_URL, cache: new InMemoryCache() }), []);
@@ -128,98 +122,31 @@ function AppInner() {
     const s = await provider.getSigner();
     setSigner(s);
     setAccount(accs[0]);
-
-    // 确保在 sepolia 网络
     const net = await provider.getNetwork();
     if (Number(net.chainId) !== 11155111) {
       alert("请切换到 Sepolia 网络");
     }
   }
 
-// async function sendToZero() {
-//   if (!signer) return alert("请先连接钱包");
-//   console.log(amount, 'amount=======')
-//   const val = Number(amount || "0");
-//   console.log(val, 'val=====')
-//   if (val < 0) return alert("金额必须大于 0");
+  async function sendToZero() {
+    if (!signer) return alert("请先连接钱包");
+    if (!toAddress || !ethers.isAddress(toAddress)) return alert("请输入有效的地址");
+    const val = parseEther(amount || "0");
+    if (val <= 0n) return alert("金额必须大于 0");
 
-//   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-//   try {
-//     // ⚠️ ZeroAddress 可以换成测试地址，避免实际丢失 ETH
-//     const tx = await contract.transferEth('0x98A3031b62DD564Cda850134a4A5034A80C2756b', { value: val });
-//     await tx.wait();
-//     alert(`已发送，交易哈希：${tx.hash}`);
-//   } catch (err: any) {
-//     console.error(err);
-//     alert("transferEth 交易失败，请检查金额或网络");
-//   }
-// }
-
-// async function sendToZero() {
-//   if (!signer) return alert("请先连接钱包");
-
-//   if (!amount || parseFloat(amount) <= 0) return alert("金额必须大于 0");
-
-//   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-//   try {
-//     const tx = await contract.transferEth('0x98A3031b62DD564Cda850134a4A5034A80C2756b', { value: parseEther(amount) });
-//     await tx.wait();
-//     alert(`已发送，交易哈希：${tx.hash}`);
-//   } catch (err: any) {
-//     console.error(err);
-//     alert("转账失败，请检查金额或网络");
-//   }
-// }
-
-// async function sendToZero() {
-//   if (!signer) return alert("请先连接钱包");
-
-//   const val = parseEther(amount); // amount 是字符串，如 "0.00001"
-//   if (val <= 0n) return alert("金额必须大于 0");
-
-//   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-//   try {
-//     const tx = await contract.transferEth('0x98A3031b62DD564Cda850134a4A5034A80C2756b', { value: val });
-//     await tx.wait();
-//     alert(`已发送，交易哈希：${tx.hash}`);
-//   } catch (err: any) {
-//     console.error(err);
-//     alert("转账失败，请检查金额或网络");
-//   }
-// }
-
-// import { parseEther } from "ethers";
-
-async function sendToZero() {
-  if (!signer) return alert("请先连接钱包");
-
-  const val = parseEther(amount || "0");
-  if (val <= 0n) return alert("金额必须大于 0");
-
-  // ⚠️ 测试时不要用 ZeroAddress，换成你控制的账户地址
-  const toAddress = "0x98A3031b62DD564Cda850134a4A5034A80C2756b";
-
-  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-  try {
-    const tx = await contract.transferEth(toAddress, { value: val });
-    await tx.wait();
-    alert(`已发送，交易哈希：${tx.hash}`);
-  } catch (err: any) {
-    console.error(err);
-    alert("交易失败，请检查金额、地址或网络");
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    try {
+      const tx = await contract.transferEth(toAddress, { value: val });
+      await tx.wait();
+      alert(`已发送，交易哈希：${tx.hash}`);
+    } catch (err: any) {
+      console.error(err);
+      alert("交易失败，请检查金额、地址或网络");
+    }
   }
-}
-
-
-
-
 
   async function writeOnchain() {
     if (!signer) return alert("请先连接钱包");
-    console.log(CONTRACT_ADDRESS,'CONTRACT_ADDRESS===')
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
     const tx = await contract.writeData(content);
     await tx.wait();
@@ -229,30 +156,68 @@ async function sendToZero() {
 
   return (
     <ApolloProvider client={apollo}>
-      <div style={{ maxWidth: 720, margin: "40px auto", fontFamily: "sans-serif" }}>
-        <h1>Sepolia Graph </h1>
-        <button onClick={connect}>{account ? `已连接：${account.slice(0,6)}…${account.slice(-4)}` : "连接 MetaMask"}</button>
+      <div className="max-w-3xl mx-auto py-10 px-6 font-sans space-y-8">
+        <h1 className="text-3xl font-bold text-center">🚀 Sepolia Graph DApp</h1>
 
-        <h2>1) 向 Zero Address 转账</h2>
-        <div>
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00005" /> ETH &nbsp;
-          <button onClick={sendToZero}>发送</button>
-          <p style={{opacity:0.7}}>提示：这是演示 gas 消耗的交易，请使用极小金额并确保账户有 Sepolia ETH。</p>
+        <div className="flex justify-center">
+          <Button onClick={connect}>
+            {account ? `已连接：${account.slice(0, 6)}…${account.slice(-4)}` : "🔗 连接 MetaMask"}
+          </Button>
         </div>
 
-        <h2>2) 数据上链（触发事件）</h2>
-        <div>
-          <input value={content} onChange={(e) => setContent(e.target.value)} placeholder="输入要写入的内容" style={{ width: "70%" }} />
-          <button onClick={writeOnchain} disabled={!content}>写入</button>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>1️⃣ 向指定地址转账</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={toAddress}
+                onChange={(e) => setToAddress(e.target.value)}
+                placeholder="输入接收地址"
+              />
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00005"
+              />
+              <Button onClick={sendToZero}>发送</Button>
+            </div>
+            <p className="text-gray-500 text-sm">
+              ⚠️ 提示：请确保地址正确且账户有 Sepolia ETH。
+            </p>
+          </CardContent>
+        </Card>
 
-        <h2>3) 从 The Graph 读回展示</h2>
-        {/* <RecordsList /> */}
-        <DataList />
+        <Card>
+          <CardHeader>
+            <CardTitle>2️⃣ 数据上链（触发事件）</CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-2">
+            <Input
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="输入要写入的内容"
+            />
+            <Button onClick={writeOnchain} disabled={!content}>
+              写入
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>3️⃣ 从 The Graph 读回展示</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataList />
+          </CardContent>
+        </Card>
       </div>
     </ApolloProvider>
   );
 }
+
 
 export default function App() {
   return <AppInner />;
